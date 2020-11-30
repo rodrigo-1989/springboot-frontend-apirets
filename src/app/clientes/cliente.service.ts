@@ -1,11 +1,11 @@
 import { Injectable }                 from '@angular/core';
-import { CLIENTES }                   from './clientes.json';
+import { DatePipe,formatDate, }        from '@angular/common';
 import { Cliente}                     from './cliente';
-import { of,Observable, throwError }  from 'rxjs';
+import { Observable, throwError }     from 'rxjs';
 import { HttpClient,HttpHeaders }     from '@angular/common/http';
-import { map,catchError }             from 'rxjs/operators';
+import { map,catchError,tap }             from 'rxjs/operators';
 import Swal                           from 'sweetalert2';
-import { Router }                      from '@angular/router';
+import { Router }                     from '@angular/router';
 
 
 
@@ -19,7 +19,33 @@ export class ClienteService {
   constructor( private http:HttpClient , private router:Router ) { }
 //Metodo para madar a traer los registros de la base de datos
   getClientes():Observable<Cliente[]>{
-    return this.http.get<Cliente[]>(this.urlEndPoint);
+    return this.http.get<Cliente[]>(this.urlEndPoint).pipe(
+      tap(response=>{
+        console.log('ClienteService: tap 1');
+        let clientes = response as Cliente[];
+          clientes.forEach(cliente =>{
+          console.log(cliente.nombre);
+        })
+      }),
+      //En las siguientes lineas solo cambian los nombres a mayusculas
+      map( response => {
+        let clientes = response as Cliente [];
+        return clientes.map( cliente =>{
+          cliente.nombre = cliente.nombre.toUpperCase();
+
+          // let datePipe = new DatePipe('es');
+          // cliente.createAt = datePipe.transform(cliente.createAt,'EEEE dd, MMMM yyyy');
+          // cliente.createAt = formatDate(cliente.createAt,'dd-MM-yyyy','en-US');
+          return cliente;
+        });
+      }),
+      tap(response=>{
+          console.log('ClienteService: tap 2');
+          response.forEach(cliente =>{
+          console.log(cliente.nombre);
+        })
+      }),
+    );
   }
   //Metodo con el cual guardamos un nuevo cliente en la base de datos
   create(cliente: Cliente):Observable <Cliente>{
